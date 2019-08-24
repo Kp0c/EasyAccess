@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,8 +28,10 @@ namespace WebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var con_str = @"data source=.\SQLEXPRESS;Initial Catalog=EA_DB;Integrated Security=True;";
+
             services.AddCors();
-            services.AddDbContext<DataContext>(x => x.UseInMemoryDatabase("EasyAccess"));
+            services.AddDbContext<DataContext>(x => x.UseSqlServer(con_str));
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.AddAutoMapper();
 
@@ -49,7 +52,7 @@ namespace WebAPI
             {
                 x.Events = new JwtBearerEvents
                 {
-                    OnTokenValidated = OnTokenValidated
+                    OnTokenValidated = OnTokenValidated,
                 };
                 x.RequireHttpsMetadata = false;
                 x.SaveToken = true;
@@ -65,6 +68,8 @@ namespace WebAPI
             // Configure DI for App Services
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IApplicationService, ApplicationService>();
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
         private Task OnTokenValidated(TokenValidatedContext tokenValidatedContext)

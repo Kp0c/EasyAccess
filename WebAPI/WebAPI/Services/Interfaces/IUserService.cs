@@ -5,11 +5,13 @@ namespace WebAPI.Services.Interfaces
 {
     public interface IUserService
     {
-        User Authenticate(string username, string password);
-        IEnumerable<User> GetUsers();
+        bool AuthenticateByEmail(string username, string authName);
+        /*IEnumerable<UserToRegister> GetUsers();*/
         User GetById(string id);
-        User Create(User user, string password);
-        void Update(User user, string password = null);
+        User GetByUsername(string username);
+        UserToRegister Register(UserToRegister user);
+        User CompleteRegistration(string id);
+        //void Update(UserToRegister user, string password = null);
         void Delete(string id);
     }
 }

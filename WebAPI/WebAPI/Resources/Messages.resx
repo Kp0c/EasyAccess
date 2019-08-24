@@ -126,13 +126,16 @@
   <data name="CannotBeEmptyOrWhitespaceOnly" xml:space="preserve">
     <value>Value cannot be empty or whitespace only string.</value>
   </data>
-  <data name="UsernameAlreadyTaken" xml:space="preserve">
-    <value>Username %1 is already taken.</value>
+  <data name="UsernameOrEmailAlreadyTaken" xml:space="preserve">
+    <value>Username or Email %1 is already taken.</value>
   </data>
   <data name="UsernameOrPasswordIsIncorrect" xml:space="preserve">
     <value>Username or password is incorrect.</value>
   </data>
   <data name="UserNotFound" xml:space="preserve">
     <value>User not found.</value>
+  </data>
+  <data name="InvalidEmail" xml:space="preserve">
+    <value>Email is invalid.</value>
   </data>
 </root>

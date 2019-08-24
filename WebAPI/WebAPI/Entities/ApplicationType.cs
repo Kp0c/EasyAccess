@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace WebAPI.Entities
+﻿namespace WebAPI.Entities
 {
     public enum ApplicationType
     {
+        Email,
         Android,
         Other
     }

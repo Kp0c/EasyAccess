@@ -1,7 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using WebAPI.Dtos;
 using WebAPI.Entities;
 using WebAPI.Helpers;
@@ -16,12 +22,15 @@ namespace WebAPI.Controllers
     {
         IApplicationService _applicationService;
         IMapper _mapper;
+        readonly AppSettings _appSettings;
 
         public ApplicationsController(IApplicationService applicationService,
-                                      IMapper mapper)
+                                      IMapper mapper,
+                                      IOptions<AppSettings> appSettings)
         {
             _applicationService = applicationService;
             _mapper = mapper;
+            _appSettings = appSettings.Value;
         }
 
         [HttpGet]
@@ -72,23 +81,6 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(string userId, string id, [FromBody]ApplicationDto applicationDto)
-        {
-            var application = _mapper.Map<Application>(applicationDto);
-            application.Id = id;
-
-            try
-            {
-                _applicationService.Update(userId, application);
-                return Ok();
-            }
-            catch (AppException ex)
-            {
-                return BadRequest(new { ex.Message });
-            }
-        }
-
         [HttpDelete("{id}")]
         public IActionResult Delete(string userId, string id)
         {
@@ -103,15 +95,51 @@ namespace WebAPI.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}/authenticate")]
-        public IActionResult Authenticate(string userId, string id)
+        public IActionResult Authenticate(string userId, string id, [FromQuery] string name)
         {
             try
             {
-                _applicationService.Authenticate(userId, id);
-                return Ok();
+                if (_applicationService.Authenticate(userId, id, name))
+                {
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+                    var tokenDescriptor = new SecurityTokenDescriptor
+                    {
+                        Subject = new ClaimsIdentity(new Claim[]
+                        {
+                            new Claim(ClaimTypes.Name, userId)
+                        }),
+                        Expires = DateTime.UtcNow.AddMonths(1),
+                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                    };
+                    var token = tokenHandler.CreateToken(tokenDescriptor);
+                    var tokenString = tokenHandler.WriteToken(token);
+
+                    return Ok(tokenString);
+                }
+                else
+                {
+                    return Unauthorized();
+                }
             }
             catch(AppException ex)
+            {
+                return BadRequest(new { ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("/api/[controller]/{id}/complete/{authId}")]
+        public IActionResult CompleteAuthentication(string id, string authId)
+        {
+            try
+            {
+                _applicationService.CompleteAuthentication(id, authId);
+                return Ok();
+            }
+            catch (AppException ex)
             {
                 return BadRequest(new { ex.Message });
             }

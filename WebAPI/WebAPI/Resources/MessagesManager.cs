@@ -7,9 +7,9 @@
             return ArgumentizeString(Messages.CannotBeEmpty, arg1);
         }
 
-        public static string UsernameIsAlreadyTaken(string arg1)
+        public static string UsernameOrEmailIsAlreadyTaken(string arg1)
         {
-            return ArgumentizeString(Messages.UsernameAlreadyTaken, arg1);
+            return ArgumentizeString(Messages.UsernameOrEmailAlreadyTaken, arg1);
         }
 
         public static string UserNotFound
@@ -30,6 +30,11 @@
         public static string ApplicationNotFound
         {
             get => Messages.ApplicationNotFound;
+        }
+
+        public static string InvalidEmail
+        {
+            get => Messages.InvalidEmail;
         }
 
         private static string ArgumentizeString(string input, params string[] args)

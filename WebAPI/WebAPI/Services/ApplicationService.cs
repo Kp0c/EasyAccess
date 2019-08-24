@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.Linq;
 using WebAPI.Entities;
@@ -13,11 +13,13 @@ namespace WebAPI.Services
     {
         readonly IUserService _userService;
         DataContext _context;
+        IHttpContextAccessor _httpContextAccessor;
 
-        public ApplicationService(IUserService userService, DataContext context)
+        public ApplicationService(IUserService userService, DataContext context, IHttpContextAccessor httpContextAccessor)
         {
             _userService = userService;
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public Application AddApplication(string userId, Application application)
@@ -25,15 +27,35 @@ namespace WebAPI.Services
             var user = GetUser(userId);
 
             user.Applications.Add(application);
-
-            _userService.Update(user);
+            
+            _context.SaveChanges();
      
             return application;
         }
 
-        public void Authenticate(string userId, string id)
+        public bool Authenticate(string userId, string id, string name)
         {
-            return;
+            var user = GetUser(userId);
+
+            var application = user.Applications.FirstOrDefault(app => app.Id == id);
+
+            if (application == null)
+            {
+                throw new AppException(MessagesManager.UserNotFound);
+            }
+
+            return application.Authenticate(_context, _httpContextAccessor, name);
+        }
+
+        public void CompleteAuthentication(string id, string authId)
+        {
+            var pendingAuth = _context.PendingAuths.FirstOrDefault(pa => pa.AuthId == authId && pa.Application.Id == id);
+
+            if (pendingAuth != null)
+            {
+                _context.PendingAuths.Remove(pendingAuth);
+                _context.SaveChanges();
+            }
         }
 
         public void Delete(string userId, string id)
@@ -42,7 +64,8 @@ namespace WebAPI.Services
 
             user.Applications.RemoveWhere(app => app.Id == id);
 
-            _userService.Update(user);
+            //_userService.Update(user);
+            _context.SaveChanges();
         }
 
         public IEnumerable<Application> GetApplications(string userId)
@@ -69,7 +92,8 @@ namespace WebAPI.Services
             application.Name = applicationParam.Name;
             application.ApplicationType = applicationParam.ApplicationType;
 
-            _userService.Update(user);
+            //_userService.Update(user);
+            _context.SaveChanges();
         }
 
         private User GetUser(string userId)

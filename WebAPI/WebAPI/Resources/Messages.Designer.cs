@@ -88,11 +88,20 @@ namespace WebAPI.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Username %1 is already taken..
+        ///   Looks up a localized string similar to Email is invalid..
         /// </summary>
-        public static string UsernameAlreadyTaken {
+        public static string InvalidEmail {
             get {
-                return ResourceManager.GetString("UsernameAlreadyTaken", resourceCulture);
+                return ResourceManager.GetString("InvalidEmail", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Username or Email %1 is already taken..
+        /// </summary>
+        public static string UsernameOrEmailAlreadyTaken {
+            get {
+                return ResourceManager.GetString("UsernameOrEmailAlreadyTaken", resourceCulture);
             }
         }
         

@@ -8,9 +8,10 @@ namespace WebAPI.Services.Interfaces
         Application AddApplication(string userId, Application application);
         IEnumerable<Application> GetApplications(string userId);
         Application GetById(string userId, string id);
-        void Update(string userId, Application application);
+       // void Update(string userId, Application application);
         void Delete(string userId, string id);
 
-        void Authenticate(string userId, string id);
+        bool Authenticate(string userId, string id, string name);
+        void CompleteAuthentication(string id, string authId);
     }
 }

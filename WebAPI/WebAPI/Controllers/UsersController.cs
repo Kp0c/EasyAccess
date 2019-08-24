@@ -4,14 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using WebAPI.Dtos;
 using WebAPI.Entities;
 using WebAPI.Helpers;
-using WebAPI.Resources;
 using WebAPI.Services.Interfaces;
 
 namespace WebAPI.Controllers
@@ -34,51 +32,66 @@ namespace WebAPI.Controllers
             _appSettings = appSettings.Value;
         }
 
-        [AllowAnonymous]
-        [HttpPost("authenticate")]
-        public IActionResult Authenticate([FromBody]UserDto userDto)
+        [HttpGet("{username}")]
+        public IActionResult GetUser(string username)
         {
-            var user = _userService.Authenticate(userDto.Username, userDto.Password);
-
-            if(user == null)
+            try
             {
-                return BadRequest(new { message = MessagesManager.UsernameOrPasswordIsIncorrect });
+                return Ok(_userService.GetByUsername(username));
             }
-
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
-            var tokenDescriptor = new SecurityTokenDescriptor
+            catch (AppException ex)
             {
-                Subject = new ClaimsIdentity(new Claim[]
+                return BadRequest(new { ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("authenticateByEmail/{username}")]
+        public IActionResult Authenticate(string username, [FromQuery] string authName)
+        {
+            try
+            {
+                if(_userService.AuthenticateByEmail(username, authName))
                 {
-                    new Claim(ClaimTypes.Name, user.Id.ToString())
-                }),
-                Expires = DateTime.UtcNow.AddHours(1),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            var tokenString = tokenHandler.WriteToken(token);
+                    var user = _userService.GetByUsername(username);
 
-            return Ok(new
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var key = Encoding.ASCII.GetBytes(_appSettings.Secret);
+                    var tokenDescriptor = new SecurityTokenDescriptor
+                    {
+                        Subject = new ClaimsIdentity(new Claim[]
+                        {
+                            new Claim(ClaimTypes.Name, user.Id)
+                        }),
+                        Expires = DateTime.UtcNow.AddMonths(1),
+                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                    };
+                    var token = tokenHandler.CreateToken(tokenDescriptor);
+                    var tokenString = tokenHandler.WriteToken(token);
+
+                    return Ok(tokenString);
+                }
+                else
+                {
+                    return Unauthorized();
+                }
+
+            }
+            catch (AppException ex)
             {
-                user.Id,
-                user.Username,
-                user.FirstName,
-                user.LastName,
-                Token = tokenString
-            });
+                return BadRequest(new { ex.Message });
+            }
         }
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public IActionResult Register([FromBody]UserDto userDto)
+        public IActionResult Register([FromBody]UserToRegisterDto userDto)
         {
-            var user = _mapper.Map<User>(userDto);
+            var user = _mapper.Map<UserToRegister>(userDto);
 
             try
             {
-                _userService.Create(user, userDto.Password);
-                return Ok();
+                return Ok(_userService.Register(user));
             }
             catch(AppException ex)
             {
@@ -86,35 +99,16 @@ namespace WebAPI.Controllers
             }
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [AllowAnonymous]
+        [HttpGet("register/{id}")]
+        public IActionResult CompleteRegistration(string id)
         {
-            var users = _userService.GetUsers();
-            var userDtos = _mapper.Map<IList<UserDto>>(users);
-            return Ok(userDtos);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult GetById(string id)
-        {
-            var user = _userService.GetById(id);
-            var userDto = _mapper.Map<UserDto>(user);
-
-            return Ok(userDto);
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult Update(string id, [FromBody]UserDto userDto)
-        {
-            var user = _mapper.Map<User>(userDto);
-            user.Id = id;
-
             try
             {
-                _userService.Update(user, userDto.Password);
-                return Ok();
+                var user = _userService.CompleteRegistration(id);
+                return Ok(user);
             }
-            catch(AppException ex)
+            catch (AppException ex)
             {
                 return BadRequest(new { ex.Message });
             }

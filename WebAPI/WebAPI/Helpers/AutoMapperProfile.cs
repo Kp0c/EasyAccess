@@ -8,7 +8,7 @@ namespace WebAPI.Helpers
     {
         public AutoMapperProfile()
         {
-            CreateBidirectionalMap<User, UserDto>();
+            CreateBidirectionalMap<UserToRegister, UserToRegisterDto>();
             CreateBidirectionalMap<Application, ApplicationDto>();
         }
 
