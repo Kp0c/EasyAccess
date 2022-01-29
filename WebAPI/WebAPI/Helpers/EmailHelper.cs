@@ -15,11 +15,11 @@ namespace WebAPI.Helpers
         {
             var client = new SmtpClient("smtp.gmail.com", 587)
             {
-                Credentials = new NetworkCredential("andriy.yushchenko97@gmail.com", "axowjbeaepwcvdfx"),
+                Credentials = new NetworkCredential("email", "password"),
                 EnableSsl = true
             };
 
-            client.Send("andriy.yushchenko97@gmail.com", recipient, header, body);
+            client.Send("email", recipient, header, body);
         }
 
         public static void SendRegistrationEmail(UserToRegister user, string baseUri)
